@@ -39,6 +39,43 @@ local function distance_between_cols(bufnr, lnum, start_col, end_col)
   return vim.fn.strdisplaywidth(sub, 0) -- these are indexed starting at 0
 end
 
+M.severity = {
+  ERROR = 1,
+  WARN = 2,
+  INFO = 3,
+  HINT = 4,
+}
+
+local function to_severity(severity)
+  if type(severity) == 'string' then
+    return assert(
+      M.severity[string.upper(severity)],
+      string.format('Invalid severity: %s', severity)
+    )
+  end
+  return severity
+end
+
+local function filter_by_severity(severity, diagnostics)
+  if not severity then
+    return diagnostics
+  end
+
+  if type(severity) ~= 'table' then
+    severity = to_severity(severity)
+    return vim.tbl_filter(function(t)
+      return t.severity == severity
+    end, diagnostics)
+  end
+
+  local min_severity = to_severity(severity.min) or M.severity.HINT
+  local max_severity = to_severity(severity.max) or M.severity.ERROR
+
+  return vim.tbl_filter(function(t)
+    return t.severity <= min_severity and t.severity >= max_severity
+  end, diagnostics)
+end
+
 ---@param namespace number
 ---@param bufnr number
 ---@param diagnostics table
@@ -55,6 +92,10 @@ function M.show(namespace, bufnr, diagnostics, opts, source)
     },
     opts = { opts, "t", true },
   })
+
+  if opts.virtual_lines.severity then
+    diagnostics = filter_by_severity(opts.virtual_lines.severity, diagnostics)
+  end
 
   table.sort(diagnostics, function(a, b)
     if a.lnum ~= b.lnum then
