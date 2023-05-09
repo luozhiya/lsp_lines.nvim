@@ -76,6 +76,8 @@ local function filter_by_severity(severity, diagnostics)
   end, diagnostics)
 end
 
+M.diagnostic_cache = {}
+
 ---@param namespace number
 ---@param bufnr number
 ---@param diagnostics table

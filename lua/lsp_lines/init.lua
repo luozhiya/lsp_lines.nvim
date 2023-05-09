@@ -27,6 +27,17 @@ end
 -- Registers a wrapper-handler to render lsp lines.
 -- This should usually only be called once, during initialisation.
 M.setup = function()
+  local _augroup = function(name)
+    return vim.api.nvim_create_augroup('LspLines_' .. name, { clear = true })
+  end
+  vim.api.nvim_create_autocmd('DiagnosticChanged', {
+    group = _augroup('update_diagnostic_cache'),
+    pattern = '*',
+    callback = function(args)
+      render.diagnostic_cache = args.data.diagnostics
+    end,
+    desc = 'Update Diagnostic Cache',
+  })  
   vim.api.nvim_create_augroup("LspLines", { clear = true })
   -- TODO: On LSP restart (e.g.: diagnostics cleared), errors don't go away.
   vim.diagnostic.handlers.virtual_lines = {
@@ -45,7 +56,7 @@ M.setup = function()
         vim.api.nvim_create_autocmd("CursorMoved", {
           buffer = bufnr,
           callback = function()
-            render_current_line(diagnostics, ns.user_data.virt_lines_ns, bufnr, opts)
+            render_current_line(render.diagnostic_cache, ns.user_data.virt_lines_ns, bufnr, opts)
           end,
           -- group = "LspLines",
         })
