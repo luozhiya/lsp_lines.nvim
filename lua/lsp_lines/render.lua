@@ -78,6 +78,13 @@ end
 
 M.diagnostic_cache = {}
 
+function M.get_bufnr(bufnr)
+  if not bufnr or bufnr == 0 then
+    return vim.api.nvim_get_current_buf()
+  end
+  return bufnr
+end
+
 ---@param namespace number
 ---@param bufnr number
 ---@param diagnostics table
@@ -106,6 +113,8 @@ function M.show(namespace, bufnr, diagnostics, opts, source)
       return a.col < b.col
     end
   end)
+
+  bufnr = M.get_bufnr(bufnr)  
 
   vim.api.nvim_buf_clear_namespace(bufnr, namespace, 0, -1)
   if #diagnostics == 0 then
